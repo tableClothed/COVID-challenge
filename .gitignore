@@ -1,5 +1,6 @@
 .ipynb_checkpoints
 json_schema
 *.json
-*.csv
+COVID.csv
+metadata.csv
 en_core_web_lg
