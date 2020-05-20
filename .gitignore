@@ -7,3 +7,5 @@ en_core_web_lg
 task8.csv
 asian_countries.csv
 data.csv
+*.h5
+*.model
