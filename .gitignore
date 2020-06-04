@@ -9,3 +9,4 @@ asian_countries.csv
 data.csv
 *.h5
 *.model
+yolov3.weights
