@@ -8,11 +8,16 @@ import re
 import os
 import pandas as pd
 import requests
+from dash.dependencies  import Input, Output, State
+import plotly.graph_objs as go
+
+external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+app.config.supress_callback_exceptions = True
 
 
-
-	
-
+####### SCRAPED DATA ########
 class Data:
 	def __init__(self):
 		self.df_today, self.df_yesterday, self.df_two_days_ago = self.get_updated_info()
@@ -47,10 +52,6 @@ class Data:
 
 
 
-
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
-
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 data = Data()
 country_list = data.get_list_of_countries()
 
@@ -71,6 +72,13 @@ fig3 = dash_table.DataTable(
 			data=df.to_dict('records'))
 
 
+# @app.callback(
+# 	Output('dropdown1', 'children'),
+# 	Input('', 'value'))
+# def update_dropdown1(dropdown_value):
+# 	return 
+
+
 app.layout = html.Div([
 
 	html.Div([
@@ -78,6 +86,7 @@ app.layout = html.Div([
 		##### DATA SRC #####
 		html.Label("Data Source"),
 		dcc.Dropdown(
+			id="dropdown1",
 			options = [
 				{'label':"Confirmed Cases", "value":"Confirmed Cases"},
 				{'label':"Confirmed Cases", "value":"Confirmed Cases"},
@@ -87,6 +96,7 @@ app.layout = html.Div([
 		##### INCREASE #####
 		html.Label("Data Source"),
 		dcc.Dropdown(
+			id="dropdown2",
 			options = [
 				{'label':"Trajectory", "value":"Trajectory"},
 				{'label':"Daily Increase", "value":"Daily Increase"},
@@ -98,6 +108,7 @@ app.layout = html.Div([
 		##### GRAPH TYPE #####
 		html.Label("Radio Items"),
 		dcc.RadioItems(
+			id="radio",
 			options=[
 				{'label':"log","value":"log"},
 				{'label':"linear","value":"linear"}
@@ -108,6 +119,7 @@ app.layout = html.Div([
 		##### CUNTRIES #####
 		html.Label("Regions"),
 		dcc.Dropdown(
+			id="regions",
 			options = regs,
 			value=["World"],
 			multi=True),
@@ -116,6 +128,7 @@ app.layout = html.Div([
 		##### DATE #####
 		html.Label("Date"),
 		dcc.Slider(
+			id="date",
 			min=0,
 			max=10),
 			],
@@ -129,7 +142,7 @@ app.layout = html.Div([
 		dcc.Graph(id="example_graph", figure=fig2)],
 		style={"width":'77%', 'display': 'inline-block', 'margin':20})
 	],
-	style={"display":"flex"})
+	style={"display":"flex", "width":"100%"})
 
 
 if __name__ == '__main__':
