@@ -14,14 +14,31 @@ import plotly.graph_objs as go
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-# app.config.supress_callback_exceptions = True
 
 
 ####### SCRAPED DATA ########
 class Data:
 	def __init__(self):
 		self.df_today, self.df_yesterday, self.df_two_days_ago = self.get_updated_info()
-		
+		self.column_names = list(self.df_today.columns)[1:]
+
+	
+	def clean_df(self, df):
+		cols_to_replace = ["NewCases", "NewDeaths", "NewRecovered"]
+
+		for index, row in df.iterrows():
+			for col in cols_to_replace:
+				try:
+					# df[col] = df[col].str.replace("+", "", regex=False)
+					# df[col] = df[col].str.replace(",", "", regex=False).astype(float)
+					df.loc[index, col] = df.loc[index, col].str.replace("+", "", regex=False)
+					df.loc[index, col] = df.loc[index, col].str.replace(",", "", regex=False).astype(float)
+
+				except:
+					next
+
+		return df
+
 
 	def get_updated_info(self):
 		url = requests.get("https://www.worldometers.info/coronavirus/").text
@@ -30,6 +47,7 @@ class Data:
 		df = pd.read_html(html_source)
 		for d in df:
 			d = d[d["Country,Other"] != "Total:"]
+			d = self.clean_df(d)
 
 		return df
 
@@ -59,54 +77,33 @@ regs = []
 for country in country_list:
 	regs.append({"label":country, "value":country})
 
-df = pd.DataFrame({
-	"Country":list(data.df_today["Country,Other"]),
-	"Amount":list(data.df_today.TotalCases)
-	})
 
-fig1 = px.line(df, x="Country", y="Amount")
-fig2 = px.scatter(df, x="Country", y="Amount")
-fig3 = dash_table.DataTable(
-			id="table",
-			columns=[{"name":i, "id":i} for i in df.columns],
-			data=df.to_dict('records'))
-
-
-# @app.callback(
-# 	Output('dropdown1', 'children'),
-# 	Input('', 'value'))
-# def update_dropdown1(dropdown_value):
-# 	return 
+options = [{'label':d, "value":d}
+			for d in list(data.column_names)]
 
 
 app.layout = html.Div([
 
 	html.Div([
 
-		##### DATA SRC #####
-		html.Label("Data Source"),
+		##### DATA X #####
+		html.Label("x data:"),
 		dcc.Dropdown(
-			id="dropdown1",
-			options = [
-				{'label':"Confirmed Cases", "value":"Confirmed Cases"},
-				{'label':"Confirmed Cases", "value":"Confirmed Cases"},
-				{'label':"Confirmed Cases", "value":"Confirmed Cases"}]),
+			id="x_data",
+			value=options[2]["value"],
+			options = options),
 
 
-		##### INCREASE #####
-		html.Label("Data Source"),
+		##### DATA Y #####
+		html.Label("y data:"),
 		dcc.Dropdown(
-			id="dropdown2",
-			options = [
-				{'label':"Trajectory", "value":"Trajectory"},
-				{'label':"Daily Increase", "value":"Daily Increase"},
-				{'label':"Cumulative", "value":"Cumulative"},
-				{'label':"Development 10", "value":"Development 10"},
-				{'label':"Development 100", "value":"Development 100"}]),
+			id="y_data",
+			value=options[1]["label"],
+			options = options),
 
 
 		##### GRAPH TYPE #####
-		html.Label("Radio Items"),
+		html.Label("Graph scaling:"),
 		dcc.RadioItems(
 			id="radio",
 			options=[
@@ -117,7 +114,7 @@ app.layout = html.Div([
 
 
 		##### CUNTRIES #####
-		html.Label("Regions"),
+		html.Label("Regions:"),
 		dcc.Dropdown(
 			id="regions",
 			options = regs,
@@ -126,23 +123,51 @@ app.layout = html.Div([
 
 
 		##### DATE #####
-		html.Label("Date"),
-		dcc.Slider(
-			id="date",
-			min=0,
-			max=10),
-			],
+		html.Label("Min cases threshold:"),
+		dcc.Input(
+			id="thresh",
+			type="number",
+			value=100),
+		
+		],
 
 		style={"width":'22%','display': 'inline-block', 'margin': 20}),
 
 	##### GRAPH #####
-	fig3,
-
 	html.Div([
-		dcc.Graph(id="example_graph", figure=fig2)],
+		dcc.Graph(id="graph")],
 		style={"width":'77%', 'display': 'inline-block', 'margin':20})
 	],
 	style={"display":"flex", "width":"100%"})
+
+
+########### CALLBACKS ############
+
+
+@app.callback(
+	Output("graph", "figure"),
+	[Input("x_data", "value"),
+	Input("y_data", "value"),
+	Input("radio", "value"),
+	Input("thresh", "value")])
+def update_scatter(x, y, radio_type, thresh_val):
+	df = data.df_today
+
+	string_cols = [col for col in df.columns if type(df.iloc[22][col]) == str]
+	print([df.iloc[22][col] for col in df.columns if type(df.iloc[22][col]) == str])
+
+	df = df.drop(string_cols, axis=1)
+	ddf = df[df[x] >= thresh_val & df[y] >= thresh_val]
+
+	fig = px.scatter(ddf, x=x, y=y)
+
+	fig.update_layout(margin={'l': 40, 'b': 40, 't': 10, 'r': 0}, hovermode='closest')
+
+	fig.update_xaxes(title=x, type=radio_type)
+	fig.update_yaxes(title=y, type=radio_type)
+
+	return fig
+	
 
 
 if __name__ == '__main__':
