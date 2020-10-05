@@ -10,6 +10,8 @@ import pandas as pd
 import requests
 from dash.dependencies  import Input, Output, State
 import plotly.graph_objs as go
+import datetime
+
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
@@ -26,30 +28,44 @@ class Data:
 	def clean_df(self, df):
 		cols_to_replace = ["NewCases", "NewDeaths", "NewRecovered"]
 
-		for index, row in df.iterrows():
-			for col in cols_to_replace:
-				try:
-					# df[col] = df[col].str.replace("+", "", regex=False)
-					# df[col] = df[col].str.replace(",", "", regex=False).astype(float)
-					df.loc[index, col] = df.loc[index, col].str.replace("+", "", regex=False)
-					df.loc[index, col] = df.loc[index, col].str.replace(",", "", regex=False).astype(float)
-
-				except:
-					next
-
+		for col in cols_to_replace:
+			df[col] = df[col].astype(str)
+			df[col] = df[col].apply(lambda x : x.replace("+", ""))
+			df[col] = df[col].apply(lambda x : x.replace(",", "")).astype(float)
 		return df
 
 
 	def get_updated_info(self):
+		today = datetime.date.today()
+		date_today = today.strftime("%d-%m-%y")
+
+		if os.listdir("csv")[-1] == f"data_{date_today}.csv":
+			# print("-------READ CSV--------")
+			dfs = []
+			for df_url in os.listdir("csv"):
+				df = pd.read_csv(f"csv/{df_url}")
+				dfs.append(df)
+			return list(reversed(dfs))
+		
+		# print("-------USE URL--------")
 		url = requests.get("https://www.worldometers.info/coronavirus/").text
 		html_source = re.sub(r'<.*?>', lambda g: g.group(0).upper(), url)
 
+		new_dfs = []
 		df = pd.read_html(html_source)
-		for d in df:
+		dates = [
+			date_today,
+			(today - datetime.timedelta(days=1)).strftime("%d-%m-%y"),
+			(today - datetime.timedelta(days=2)).strftime("%d-%m-%y")
+		]
+
+		for d, date in zip(df, dates):
 			d = d[d["Country,Other"] != "Total:"]
 			d = self.clean_df(d)
+			new_dfs.append(d)
+			d.to_csv(f"csv/data_{date}.csv", index=False)
 
-		return df
+		return new_dfs
 
 
 	def get_list_of_continents(self):
@@ -71,15 +87,10 @@ class Data:
 
 
 data = Data()
-country_list = data.get_list_of_countries()
 
-regs = []
-for country in country_list:
-	regs.append({"label":country, "value":country})
-
-
-options = [{'label':d, "value":d}
-			for d in list(data.column_names)]
+options = [{'label':col, "value":col}
+			for col in list(data.column_names)
+			if type(data.df_today.iloc[22][col]) != str]
 
 
 app.layout = html.Div([
@@ -117,7 +128,6 @@ app.layout = html.Div([
 		html.Label("Regions:"),
 		dcc.Dropdown(
 			id="regions",
-			options = regs,
 			value=["World"],
 			multi=True),
 
@@ -136,6 +146,8 @@ app.layout = html.Div([
 	##### GRAPH #####
 	html.Div([
 		dcc.Graph(id="graph")],
+
+
 		style={"width":'77%', 'display': 'inline-block', 'margin':20})
 	],
 	style={"display":"flex", "width":"100%"})
@@ -143,28 +155,47 @@ app.layout = html.Div([
 
 ########### CALLBACKS ############
 
+@app.callback(
+	Output("regions","options"),
+	 Input("thresh", "value"))
+def update_countries_dropdown(thresh):
+	df = data.df_today
+
+	ddf = df[df["TotalCases"] >= thresh]
+	countries = ddf["Country,Other"].values
+
+	return [{'label': country, 'value': country} for country in countries if len(country) > 0]
+
 
 @app.callback(
 	Output("graph", "figure"),
 	[Input("x_data", "value"),
 	Input("y_data", "value"),
+	Input("regions", "value"),
 	Input("radio", "value"),
 	Input("thresh", "value")])
-def update_scatter(x, y, radio_type, thresh_val):
+def update_scatter(x, y, regions, radio_type, thresh_val):
 	df = data.df_today
 
-	string_cols = [col for col in df.columns if type(df.iloc[22][col]) == str]
-	print([df.iloc[22][col] for col in df.columns if type(df.iloc[22][col]) == str])
+	ddf = df[df["TotalCases"] >= thresh_val]
+	countries_to_show = ddf["Country,Other"].values
 
-	df = df.drop(string_cols, axis=1)
-	ddf = df[df[x] >= thresh_val & df[y] >= thresh_val]
+	countries_to_df = []
+	for country in countries_to_show:
+		val = "chosen" if country in regions else "other"
+		countries_to_df.append(val)
 
-	fig = px.scatter(ddf, x=x, y=y)
+	ddf["color_scatter"] = countries_to_df
 
-	fig.update_layout(margin={'l': 40, 'b': 40, 't': 10, 'r': 0}, hovermode='closest')
+	fig = px.scatter(ddf, x=x, y=y,	color="color_scatter",
+		hover_name="Country,Other")
+
+	fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
+		hovermode='closest', showlegend=False)
 
 	fig.update_xaxes(title=x, type=radio_type)
 	fig.update_yaxes(title=y, type=radio_type)
+
 
 	return fig
 	
