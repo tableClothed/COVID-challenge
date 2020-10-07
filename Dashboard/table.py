@@ -21,7 +21,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 class Data:
 	def __init__(self):
 		self.df_today, self.df_yesterday, self.df_two_days_ago = self.get_updated_info()
-		
+		self.df = self.scrap_time_series()
 
 	def get_updated_info(self):
 		url = requests.get("https://www.worldometers.info/coronavirus/").text

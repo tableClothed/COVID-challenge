@@ -10,18 +10,18 @@ import pandas as pd
 import requests
 from dash.dependencies  import Input, Output, State
 import plotly.graph_objs as go
+import datetime
 
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
+external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css", "styles/style.css"]
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-# app.config.supress_callback_exceptions = True
 
 
 ####### SCRAPED DATA ########
 class Data:
 	def __init__(self):
 		self.df_today, self.df_yesterday, self.df_two_days_ago = self.get_updated_info()
-		
+		self.df = self.scrap_time_series()
 
 	def get_updated_info(self):
 		url = requests.get("https://www.worldometers.info/coronavirus/").text
@@ -51,47 +51,46 @@ class Data:
 		return val
 
 
+	def scrap_time_series(self):
+		url = "https://raw.githubusercontent.com/datasets/covid-19/master/data/countries-aggregated.csv"
+		
+		today = datetime.date.today()
+		date_today = today.strftime("%d-%m-%y")
+
+
+		filename = f"csv/data_net_{date_today}.csv"
+		if os.path.isfile(filename):
+			df = pd.read_csv(filename)
+		else:
+			df = pd.read_csv(url)
+			df.to_csv(filename)
+
+		return df
+
+
+
 
 data = Data()
-country_list = data.get_list_of_countries()
+country_list = data.df.Country.unique()
 
 regs = []
 for country in country_list:
 	regs.append({"label":country, "value":country})
 
-df = pd.DataFrame({
-	"Country":list(data.df_today["Country,Other"]),
-	"Amount":list(data.df_today.TotalCases)
-	})
 
-fig1 = px.line(df, x="Country", y="Amount")
-fig2 = px.scatter(df, x="Country", y="Amount")
-fig3 = dash_table.DataTable(
-			id="table",
-			columns=[{"name":i, "id":i} for i in df.columns],
-			data=df.to_dict('records'))
-
-
-# @app.callback(
-# 	Output('dropdown1', 'children'),
-# 	Input('', 'value'))
-# def update_dropdown1(dropdown_value):
-# 	return 
+# df = data.df
+# plot = px.line(df, x="Date", y="Deaths", color="Country", height=900)
+# plot.update_layout(legend=dict(
+# 	orientation="h",
+# 	yanchor="top",
+# 	xanchor="center",
+# 	y=-0.3,
+# 	x=0.5))
 
 
 app.layout = html.Div([
 
 	html.Div([
-
-		##### DATA SRC #####
-		html.Label("Data Source"),
-		dcc.Dropdown(
-			id="dropdown1",
-			options = [
-				{'label':"Confirmed Cases", "value":"Confirmed Cases"},
-				{'label':"Confirmed Cases", "value":"Confirmed Cases"},
-				{'label':"Confirmed Cases", "value":"Confirmed Cases"}]),
-
 
 		##### INCREASE #####
 		html.Label("Data Source"),
@@ -116,12 +115,12 @@ app.layout = html.Div([
 			value="log"),
 
 
-		##### CUNTRIES #####
+		##### COUNTRIES #####
 		html.Label("Regions"),
 		dcc.Dropdown(
 			id="regions",
 			options = regs,
-			value=["World"],
+			value=["Germany", "Poland"],
 			multi=True),
 
 
@@ -133,16 +132,69 @@ app.layout = html.Div([
 			max=10),
 			],
 
-		style={"width":'22%','display': 'inline-block', 'margin': 20}),
+		style={
+			"width":'15vw',
+			'display': 'inline-block',
+			'padding': 20,
+			'background':'#f5f5ed',
+			'height':'100vh'}
+		),
 
 	##### GRAPH #####
-	fig3,
 
 	html.Div([
-		dcc.Graph(id="example_graph", figure=fig2)],
-		style={"width":'77%', 'display': 'inline-block', 'margin':20})
+		dcc.Graph(id="graph")],
+		style={
+			"width":'85vw',
+			'display':'inline-block'
+			})
 	],
-	style={"display":"flex", "width":"100%"})
+	style={
+		"display":"flex",
+		"width":"100vw",
+		'margin':0,
+		'height':'100vh',
+		'overflow':'hidden'}
+)
+
+
+
+@app.callback(
+	Output("graph", "figure"),
+	[Input("regions", "value"),
+	Input("radio", "value"),
+	Input("date", "value")])
+def update_countries_plot(regions, radio, date):
+	df = data.df
+	# ddf = df[df["TotalCases"] >= date]
+
+	countries_to_show = df.Country.values
+
+	countries_to_df = []
+	for country in countries_to_show:
+		val = country if country in regions else "other"
+		countries_to_df.append(val)
+
+	df["color_scatter"] = countries_to_df
+
+	fig = px.scatter(df,x="Date", y="Deaths", color="color_scatter",
+		hover_name="Country")
+
+	# fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
+	# 	hovermode='closest', showlegend=False)
+	fig.update_layout(legend=dict(
+		orientation="h",
+		yanchor="top",
+		xanchor="center",
+		y=-0.3,
+		x=0.5))
+
+	fig.update_xaxes(type=radio)
+	fig.update_yaxes(type=radio)
+	return fig
+
+
+
 
 
 if __name__ == '__main__':
