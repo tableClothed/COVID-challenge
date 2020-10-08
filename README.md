@@ -1,9 +1,11 @@
 # COVID projects 🦠
 --------------------
-1. Kaggle challenge concerning COVID-19. Literature clustering.
-2. Scraping data concerning COVID reported cases and deaths from websites and presenting them as an interactive dashboard.
-3. Detecting with YOLO whether the minimal safe distance between two persons is being kept.
-4. Realtime camera detecting whether a particular person is wearing a mask or not.
+1. **Literature clustering** - Kaggle challenge concerning COVID-19.
+2. **Dashboard** - Scraping data concerning COVID reported cases and deaths from websites and presenting them as an interactive dashboard.
+3. **Social Distancing** - Detecting with YOLO whether the minimal safe distance between two persons is being kept.
+4. **Mask detector** - Realtime camera detecting whether a particular person is wearing a mask or not.
+
+**Find more details in each folder with the right name.**
 
 Using:
 - Kaggle's scrapped articles and datasets
