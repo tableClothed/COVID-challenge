@@ -12,70 +12,104 @@ from dash.dependencies  import Input, Output, State
 import plotly.graph_objs as go
 import datetime
 
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css", "styles/style.css"]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+class Line_Plot():
+	def __init__(self, app, data):
+		self.data = data
+		country_list = self.data.Country.unique()
+		regs = []
+		for country in country_list:
+			regs.append({"label":country, "value":country})
 
+		self.graph = html.Div([dcc.Graph(id="graph-line")],
+			style={
+				"width":'85vw',
+				'display':'inline-block'
+			})
 
-####### SCRAPED DATA ########
-class Data:
-	def __init__(self):
-		self.df_today, self.df_yesterday, self.df_two_days_ago = self.get_updated_info()
-		self.df = self.scrap_time_series()
-
-	def get_updated_info(self):
-		url = requests.get("https://www.worldometers.info/coronavirus/").text
-		html_source = re.sub(r'<.*?>', lambda g: g.group(0).upper(), url)
-
-		df = pd.read_html(html_source)
-		for d in df:
-			d = d[d["Country,Other"] != "Total:"]
-
-		return df
-
-
-	def get_list_of_continents(self):
-		continents = set([d for d in self.df_today["Continent"] if type(d) == str])
-		return list(continents)
+		app.callback(
+			Output("graph-line", "figure"),
+			[Input("regions-line", "value"),
+			Input("chosen_y", "value"),
+			Input("radio-line", "value"),
+			Input("date-line", "value")])(self.update_countries_plot)
 
 
-	def get_list_of_countries(self):
-		countries = (set([d for d in self.df_today["Country,Other"]
-			if type(d) == str and d not in self.df_today["Continent"]
-			and d.lower() is not "total:"]))
-		return list(countries) 
-	
+		self.navbar = html.Div([
 
-	def get_data_for(self, column, value_in_row, returned_column):
-		val = df.loc[df[column] == value_in_row,  returned_column]
-		return val
+			##### DATA RELATIONS #####
+			html.Label("Data Y"),
+			dcc.Dropdown(
+				id="chosen_y",
+				options = [ {"label":i, "value":i} for i in list(self.data.columns)]),
 
 
-	def scrap_time_series(self):
-		url = "https://raw.githubusercontent.com/datasets/covid-19/master/data/countries-aggregated.csv"
-		
-		today = datetime.date.today()
-		date_today = today.strftime("%d-%m-%y")
+			##### GRAPH TYPE #####
+			html.Label("Radio Items"),
+			dcc.RadioItems(
+				id="radio-line",
+				options=[
+					{'label':"log","value":"log"},
+					{'label':"linear","value":"linear"}
+				],
+				labelStyle ={'display': 'inline-block'},
+				value="log"),
 
 
-		filename = f"csv/data_net_{date_today}.csv"
-		if os.path.isfile(filename):
-			df = pd.read_csv(filename)
-		else:
-			df = pd.read_csv(url)
-			df.to_csv(filename)
-
-		return df
-
+			##### COUNTRIES #####
+			html.Label("Regions"),
+			dcc.Dropdown(
+				id="regions-line",
+				options = regs,
+				value=["Germany", "Poland"],
+				multi=True),
 
 
+			##### DATE #####
+			html.Label("Date"),
+			dcc.Slider(
+				id="date-line",
+				min=0,
+				max=10),
+				]
 
-data = Data()
-country_list = data.df.Country.unique()
+			# style={
+			# 	"width":'15vw',
+			# 	'display': 'inline-block',
+			# 	'padding': 20,
+			# 	'background':'#f5f5ed',
+			# 	'height':'100vh'}
+			)
 
-regs = []
-for country in country_list:
-	regs.append({"label":country, "value":country})
+
+
+	def update_countries_plot(self, regions, chosen_y, radio, date):
+		df = self.data
+		# ddf = df[df["TotalCases"] >= date]
+
+		countries_to_show = df.Country.values
+
+		countries_to_df = []
+		for country in countries_to_show:
+			val = country if country in regions else "other"
+			countries_to_df.append(val)
+
+		df["color_scatter"] = countries_to_df
+
+		fig = px.line(df, x="Date", y="Deaths", color="color_scatter")
+
+		# fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
+		# 	hovermode='closest', showlegend=False)
+		fig.update_layout(legend=dict(
+			orientation="h",
+			yanchor="top",
+			xanchor="center",
+			y=-0.3,
+			x=0.5))
+
+		fig.update_xaxes(type=radio)
+		fig.update_yaxes(type=radio)
+		return fig
 
 
 # df = data.df
@@ -88,114 +122,57 @@ for country in country_list:
 # 	x=0.5))
 
 
-app.layout = html.Div([
+# app.layout = html.Div([
 
-	html.Div([
+# 	##### GRAPH #####
 
-		##### INCREASE #####
-		html.Label("Data Source"),
-		dcc.Dropdown(
-			id="dropdown2",
-			options = [
-				{'label':"Trajectory", "value":"Trajectory"},
-				{'label':"Daily Increase", "value":"Daily Increase"},
-				{'label':"Cumulative", "value":"Cumulative"},
-				{'label':"Development 10", "value":"Development 10"},
-				{'label':"Development 100", "value":"Development 100"}]),
-
-
-		##### GRAPH TYPE #####
-		html.Label("Radio Items"),
-		dcc.RadioItems(
-			id="radio",
-			options=[
-				{'label':"log","value":"log"},
-				{'label':"linear","value":"linear"}
-			],
-			value="log"),
-
-
-		##### COUNTRIES #####
-		html.Label("Regions"),
-		dcc.Dropdown(
-			id="regions",
-			options = regs,
-			value=["Germany", "Poland"],
-			multi=True),
-
-
-		##### DATE #####
-		html.Label("Date"),
-		dcc.Slider(
-			id="date",
-			min=0,
-			max=10),
-			],
-
-		style={
-			"width":'15vw',
-			'display': 'inline-block',
-			'padding': 20,
-			'background':'#f5f5ed',
-			'height':'100vh'}
-		),
-
-	##### GRAPH #####
-
-	html.Div([
-		dcc.Graph(id="graph")],
-		style={
-			"width":'85vw',
-			'display':'inline-block'
-			})
-	],
-	style={
-		"display":"flex",
-		"width":"100vw",
-		'margin':0,
-		'height':'100vh',
-		'overflow':'hidden'}
-)
+# 	html.Div([
+# 		dcc.Graph(id="graph")],
+# 		style={
+# 			"width":'85vw',
+# 			'display':'inline-block'
+# 			})
+# 	],
+# 	style={
+# 		"display":"flex",
+# 		"width":"100vw",
+# 		'margin':0,
+# 		'height':'100vh',
+# 		'overflow':'hidden'}
+# )
 
 
 
-@app.callback(
-	Output("graph", "figure"),
-	[Input("regions", "value"),
-	Input("radio", "value"),
-	Input("date", "value")])
-def update_countries_plot(regions, radio, date):
-	df = data.df
-	# ddf = df[df["TotalCases"] >= date]
+# @app.callback(
+# 	Output("graph", "figure"),
+# 	[Input("regions", "value"),
+# 	Input("radio", "value"),
+# 	Input("date", "value")])
+# def update_countries_plot(regions, radio, date):
+# 	df = data.df
+# 	# ddf = df[df["TotalCases"] >= date]
 
-	countries_to_show = df.Country.values
+# 	countries_to_show = df.Country.values
 
-	countries_to_df = []
-	for country in countries_to_show:
-		val = country if country in regions else "other"
-		countries_to_df.append(val)
+# 	countries_to_df = []
+# 	for country in countries_to_show:
+# 		val = country if country in regions else "other"
+# 		countries_to_df.append(val)
 
-	df["color_scatter"] = countries_to_df
+# 	df["color_scatter"] = countries_to_df
 
-	fig = px.scatter(df,x="Date", y="Deaths", color="color_scatter",
-		hover_name="Country")
+# 	fig = px.scatter(df,x="Date", y="Deaths", color="color_scatter",
+# 		hover_name="Country")
 
-	# fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
-	# 	hovermode='closest', showlegend=False)
-	fig.update_layout(legend=dict(
-		orientation="h",
-		yanchor="top",
-		xanchor="center",
-		y=-0.3,
-		x=0.5))
+# 	# fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
+# 	# 	hovermode='closest', showlegend=False)
+# 	fig.update_layout(legend=dict(
+# 		orientation="h",
+# 		yanchor="top",
+# 		xanchor="center",
+# 		y=-0.3,
+# 		x=0.5))
 
-	fig.update_xaxes(type=radio)
-	fig.update_yaxes(type=radio)
-	return fig
-
-
-
-
-
-if __name__ == '__main__':
-	app.run_server(debug=True)
+# 	fig.update_xaxes(type=radio)
+# 	fig.update_yaxes(type=radio)
+# 	return fig
