@@ -14,10 +14,10 @@ with open("YOLO_model/coco.names", "r") as f:
 
 net = cv2.dnn.readNet("YOLO_model/yolov3.weights", "YOLO_model/yolov3.cfg")
 
-# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-# ln = net.getLayerNames()
-# ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+ln = net.getLayerNames()
+ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 camera = cv2.VideoCapture("pedestrians.mp4")
 
@@ -76,7 +76,7 @@ def detect_people(frame, net, ln, personId=0):
 #            MAIN
 # -----------------------------
 
-
+frame_id = 0
 
 while True:
     ret, frame = camera.read()
@@ -100,7 +100,6 @@ while True:
 
     for (i, (prob, bbox, centroid)) in enumerate(results):
     	(startX, startY, endX, endY) = bbox
-    	(cX, cY) = centroid
     	color = (0, 255, 0)
 
     	# if index pair exists within the violation set, then update color
@@ -108,12 +107,13 @@ while True:
     		color = (0, 0, 255)
 
     	cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
-    	cv2.circle(frame, (cX, cY), 5, color, 1)
 
     text = f"{len(violate)}"
     cv2.putText(frame, text, (10, frame.shape[0] - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 0, 255), 3)
 
-    cv2.imshow("frame", frame)
+    frame_id += 1
+    # cv2.imshow("frame", frame)
+    cv2.imwrite(f"gif/frame_{frame_id}.jpg", frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
     	break

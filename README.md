@@ -1,4 +1,4 @@
-# COVID projects 🦠
+# COVID-19 projects 🦠
 --------------------
 1. **Literature clustering** - Kaggle challenge concerning COVID-19.
 2. **Dashboard** - Scraping data concerning COVID reported cases and deaths from websites and presenting them as an interactive dashboard.

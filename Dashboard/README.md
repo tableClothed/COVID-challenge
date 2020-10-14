@@ -13,9 +13,8 @@ Sources used:
 
 <p align="center">
 
-	<img src="examples/plot.PNG"  width=700>
-
-	<img src="examples/scatter.PNG"  width=700>
+<img src="examples/plot.PNG"  width=700>
+<img src="examples/scatter.PNG"  width=700>
 
 </p>
 

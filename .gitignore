@@ -10,3 +10,4 @@ data.csv
 *.h5
 *.model
 yolov3.weights
+gif

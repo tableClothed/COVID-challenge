@@ -6,11 +6,11 @@ Kaggle challenge concerning COVID-19.
 You can examine the chosen fragments of articles in `show_data.ipynb` file, but for better readability, it is recommended to download whole repo and open it in Jupyter Notebook.
 
 ## Examples:
-<img src="Literature Clustering/images/przyklad1.png" width=700>
+<img src="images/przyklad1.png" width=700>
 
-<img src="Literature Clustering/images/przyklad2.png"  width=700>
+<img src="images/przyklad2.png"  width=700>
 
-<img src="Literature Clustering/images/przyklad3.png"  width=700>
+<img src="images/przyklad3.png"  width=700>
 
 
 ---------------------------
