@@ -55,7 +55,7 @@ class Dashboard():
 			self.main_plot = self.table_data
 
 		return self.main_plot.graph, self.main_plot.navbar 
-		# self.handle_layout()
+
 
 
 	####### LAYOUT APPEARANCE #######
@@ -92,6 +92,7 @@ class Dashboard():
 			html.Div(
 				style={
 					"width":'85vw',
+					# "min-height":"100vh",
 					'display':'inline-block'
 				},
 				id="graph-layout")

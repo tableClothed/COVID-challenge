@@ -34,9 +34,9 @@ class Scatter_Plot():
 			if type(self.data.iloc[22][col]) != str]
 
 		self.graph = html.Div([ dcc.Graph(id="graph-scatter")],
-			style={"width":'77%',
-			'display': 'inline-block',
-			'margin':20})
+			style={"width":'80vw',
+			"margin":20,
+			'display': 'inline-block'})
 
 
 		self.navbar = html.Div([
@@ -87,13 +87,14 @@ class Scatter_Plot():
 			]
 
 			# style={"width":'22%','display': 'inline-block', 'margin': 20}
-			)
+		)
 
 
 	def update_countries_dropdown(self, thresh):
 		df = self.data
 
 		ddf = df[df["TotalCases"] >= thresh]
+
 		countries = ddf["Country,Other"].values
 
 		return [{'label': country, 'value': country} for country in countries if type(country) == str]
@@ -102,18 +103,44 @@ class Scatter_Plot():
 	def update_scatter(self, x, y, regions, radio_type, thresh_val):
 		df = self.data
 
-		ddf = df[df["TotalCases"] >= thresh_val]
-		countries_to_show = ddf["Country,Other"].values
+		to_delete = ["Asia", "Europe", "World", "Total:", "Oceania", "North America",
+					"South America", "Africa"]
 
-		countries_to_df = []
-		for country in countries_to_show:
-			val = "chosen" if country in regions else "other"
-			countries_to_df.append(val)
+		df = df[~df["Country,Other"].isin(to_delete)]
 
-		ddf["color_scatter"] = countries_to_df
+		df = df[df["TotalCases"] >= thresh_val]
 
-		fig = px.scatter(ddf, x=x, y=y,	color="color_scatter",
-			hover_name="Country,Other")
+		df_show_first = df[df["Country,Other"].isin(regions)]
+		df_hide = df[~df["Country,Other"].isin(regions)]
+
+		fig = go.Figure()
+
+		fig.add_trace(
+			go.Scatter(
+				mode="markers",
+				x=df_hide[x],
+				y=df_hide[y],
+				marker=dict(
+					color="grey",
+					size=8,
+					opacity=0.5
+				),
+				hovertemplate=df_hide["Country,Other"]
+			))
+
+		fig.add_trace(
+			go.Scatter(
+				mode="markers",
+				x=df_show_first[x],
+				y=df_show_first[y],
+				marker=dict(
+					color=list(range(len(df_show_first))),
+					size=10),
+				showlegend=True,
+				hovertemplate=df_show_first["Country,Other"]
+				)
+		)
+
 
 		fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
 			hovermode='closest', showlegend=False)

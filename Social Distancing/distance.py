@@ -9,15 +9,15 @@ THRESH = 0.3
 MIN_DISTANCE = 50 # in pixels
 
 LABELS = []
-with open("yolo/coco.names", "r") as f:
+with open("YOLO_model/coco.names", "r") as f:
     LABELS = [line.strip() for line in f.readlines()]
 
-net = cv2.dnn.readNet("yolo/yolov3.weights", "yolo/yolov3.cfg")
+net = cv2.dnn.readNet("YOLO_model/yolov3.weights", "YOLO_model/yolov3.cfg")
 
-net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-ln = net.getLayerNames()
-ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+# ln = net.getLayerNames()
+# ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 camera = cv2.VideoCapture("pedestrians.mp4")
 
@@ -45,7 +45,7 @@ def detect_people(frame, net, ln, personId=0):
             class_id = np.argmax(scores)
             probab = scores[class_id]
             
-#             if the object is a person and min confidence is met
+            #if the object is a person and min confidence is met
             if class_id == personId and probab > MIN_CONF:
                 # scale cunding box coords
                 box = detection[0:4] * np.array([w, h, w, h])

@@ -85,18 +85,13 @@ class Line_Plot():
 
 	def update_countries_plot(self, regions, chosen_y, radio, date):
 		df = self.data
+		print(date)
 		# ddf = df[df["TotalCases"] >= date]
 
-		countries_to_show = df.Country.values
+		ddf = df[df["Country"].isin(regions)]
 
-		countries_to_df = []
-		for country in countries_to_show:
-			val = country if country in regions else "other"
-			countries_to_df.append(val)
 
-		df["color_scatter"] = countries_to_df
-
-		fig = px.line(df, x="Date", y="Deaths", color="color_scatter")
+		fig = px.line(ddf, x='Date', y='Deaths', color="Country")
 
 		# fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
 		# 	hovermode='closest', showlegend=False)
@@ -107,72 +102,8 @@ class Line_Plot():
 			y=-0.3,
 			x=0.5))
 
-		fig.update_xaxes(type=radio)
-		fig.update_yaxes(type=radio)
+		# fig.update_xaxes(type=radio)
+		# fig.update_yaxes(type=radio)
+
+
 		return fig
-
-
-# df = data.df
-# plot = px.line(df, x="Date", y="Deaths", color="Country", height=900)
-# plot.update_layout(legend=dict(
-# 	orientation="h",
-# 	yanchor="top",
-# 	xanchor="center",
-# 	y=-0.3,
-# 	x=0.5))
-
-
-# app.layout = html.Div([
-
-# 	##### GRAPH #####
-
-# 	html.Div([
-# 		dcc.Graph(id="graph")],
-# 		style={
-# 			"width":'85vw',
-# 			'display':'inline-block'
-# 			})
-# 	],
-# 	style={
-# 		"display":"flex",
-# 		"width":"100vw",
-# 		'margin':0,
-# 		'height':'100vh',
-# 		'overflow':'hidden'}
-# )
-
-
-
-# @app.callback(
-# 	Output("graph", "figure"),
-# 	[Input("regions", "value"),
-# 	Input("radio", "value"),
-# 	Input("date", "value")])
-# def update_countries_plot(regions, radio, date):
-# 	df = data.df
-# 	# ddf = df[df["TotalCases"] >= date]
-
-# 	countries_to_show = df.Country.values
-
-# 	countries_to_df = []
-# 	for country in countries_to_show:
-# 		val = country if country in regions else "other"
-# 		countries_to_df.append(val)
-
-# 	df["color_scatter"] = countries_to_df
-
-# 	fig = px.scatter(df,x="Date", y="Deaths", color="color_scatter",
-# 		hover_name="Country")
-
-# 	# fig.update_layout(margin={'l': 40, 'b': 10, 't': 10, 'r': 40},
-# 	# 	hovermode='closest', showlegend=False)
-# 	fig.update_layout(legend=dict(
-# 		orientation="h",
-# 		yanchor="top",
-# 		xanchor="center",
-# 		y=-0.3,
-# 		x=0.5))
-
-# 	fig.update_xaxes(type=radio)
-# 	fig.update_yaxes(type=radio)
-# 	return fig

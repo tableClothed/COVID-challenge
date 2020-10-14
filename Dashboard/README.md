@@ -10,12 +10,14 @@ Sources used:
 
 
 ## Examples:
-<img src="examples/table.png" width=700>
 
-<img src="examples/plot.png"  width=700>
+<p align="center">
 
-<img src="examples/scatter.png"  width=700>
+	<img src="examples/plot.PNG"  width=700>
 
+	<img src="examples/scatter.PNG"  width=700>
+
+</p>
 
 ---------------------------
 
