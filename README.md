@@ -20,3 +20,12 @@ Tools used:
 - Selenium
 - OpenCV
 - Imutils
+
+
+<p align="center">
+<img src="Dashboard/examples/scatter.PNG" width=300>
+<img src="Mask Detector/examples/mask.gif" width=300>
+<img src="Social Distancing/pedestrians.gif" width=300>
+<img src="Literature Clustering/images/przyklad2.PNG" width=300>
+
+</p>
