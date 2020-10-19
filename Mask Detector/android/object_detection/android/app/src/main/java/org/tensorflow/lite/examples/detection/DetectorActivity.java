@@ -26,29 +26,18 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
-
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.face.Face;
-import com.google.mlkit.vision.face.FaceDetection;
-import com.google.mlkit.vision.face.FaceDetector;
-import com.google.mlkit.vision.face.FaceDetectorOptions;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
 import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
-import org.tensorflow.lite.examples.detection.tflite.Classifier;
 import org.tensorflow.lite.examples.detection.tflite.Detector;
 import org.tensorflow.lite.examples.detection.tflite.TFLiteObjectDetectionAPIModel;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
@@ -60,12 +49,10 @@ import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
 
-  private FaceDetector faceDetector;
-
   // Configuration values for the prepackaged SSD model.
   private static final int TF_OD_API_INPUT_SIZE = 300;
   private static final boolean TF_OD_API_IS_QUANTIZED = true;
-  private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
+  private static final String TF_OD_API_MODEL_FILE = "MaskDetector.tflite";
   private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
   private static final DetectorMode MODE = DetectorMode.TF_OD_API;
   // Minimum detection confidence to track a detection.
@@ -96,20 +83,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private BorderedText borderedText;
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-
-    FaceDetectorOptions options = new FaceDetectorOptions.Builder()
-            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-            .setContourMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
-            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
-            .build();
-
-    FaceDetector detector = FaceDetection.getClient(options);
-    faceDetector = detector;
-  }
-
-  @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
     final float textSizePx =
         TypedValue.applyDimension(
@@ -124,7 +97,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     try {
       detector =
           TFLiteObjectDetectionAPIModel.create(
-              getAssets(),
+              this,
               TF_OD_API_MODEL_FILE,
               TF_OD_API_LABELS_FILE,
               TF_OD_API_INPUT_SIZE,
@@ -192,33 +165,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     readyForNextImage();
 
-//    final Canvas canvas = new Canvas(croppedBitmap);
-//    canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
-//    // For examining the actual TF input.
-//    if (SAVE_PREVIEW_BITMAP) {
-//      ImageUtils.saveBitmap(croppedBitmap);
-//    }
-
     final Canvas canvas = new Canvas(croppedBitmap);
     canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
-
-
-    InputImage image = InputImage.fromBitmap(croppedBitmap, 0);
-    faceDetector
-            .process(image)
-            .addOnSuccessListener(new OnSuccessListener<List<Face>>() {
-      @Override
-      public void onSuccess(List<Face> faces) {
-        runInBackground(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    onFacesDetected(currTimestamp, faces);
-                  }
-                }
-        );
-      }
-    });
+    // For examining the actual TF input.
+    if (SAVE_PREVIEW_BITMAP) {
+      ImageUtils.saveBitmap(croppedBitmap);
+    }
 
     runInBackground(
         new Runnable() {
@@ -276,12 +228,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         });
   }
 
-  private void onFacesDetected(long currTimestamp, List<Face> faces) {
-
-    final List<Classifier.Recognition> mappedRecognitions = new LinkedList<Classifier.Recognition>()>;
-  }
-
-
   @Override
   protected int getLayoutId() {
     return R.layout.tfe_od_camera_connection_fragment_tracking;
@@ -300,11 +246,33 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   @Override
   protected void setUseNNAPI(final boolean isChecked) {
-    runInBackground(() -> detector.setUseNNAPI(isChecked));
+    runInBackground(
+        () -> {
+          try {
+            detector.setUseNNAPI(isChecked);
+          } catch (UnsupportedOperationException e) {
+            LOGGER.e(e, "Failed to set \"Use NNAPI\".");
+            runOnUiThread(
+                () -> {
+                  Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+          }
+        });
   }
 
   @Override
   protected void setNumThreads(final int numThreads) {
-    runInBackground(() -> detector.setNumThreads(numThreads));
+    runInBackground(
+        () -> {
+          try {
+            detector.setNumThreads(numThreads);
+          } catch (IllegalArgumentException e) {
+            LOGGER.e(e, "Failed to set multithreads.");
+            runOnUiThread(
+                () -> {
+                  Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+          }
+        });
   }
 }

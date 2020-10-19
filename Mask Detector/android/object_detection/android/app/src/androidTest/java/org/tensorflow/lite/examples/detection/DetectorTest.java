@@ -50,7 +50,7 @@ public class DetectorTest {
 
   private static final int MODEL_INPUT_SIZE = 300;
   private static final boolean IS_MODEL_QUANTIZED = true;
-  private static final String MODEL_FILE = "detect.tflite";
+  private static final String MODEL_FILE = "MaskDetector.tflite";
   private static final String LABELS_FILE = "labelmap.txt";
   private static final Size IMAGE_SIZE = new Size(640, 480);
 
@@ -61,11 +61,9 @@ public class DetectorTest {
 
   @Before
   public void setUp() throws IOException {
-    AssetManager assetManager =
-        InstrumentationRegistry.getInstrumentation().getContext().getAssets();
     detector =
         TFLiteObjectDetectionAPIModel.create(
-            assetManager,
+            InstrumentationRegistry.getInstrumentation().getContext(),
             MODEL_FILE,
             LABELS_FILE,
             MODEL_INPUT_SIZE,
@@ -87,8 +85,8 @@ public class DetectorTest {
 
   @Test
   public void detectionResultsShouldNotChange() throws Exception {
-    Canvas canvas = new Canvas(croppedBitmap);
-    canvas.drawBitmap(loadImage("table.jpg"), frameToCropTransform, null);
+//    Canvas canvas = new Canvas(croppedBitmap);
+//    canvas.drawBitmap(loadImage("table.jpg"), frameToCropTransform, null);
     final List<Recognition> results = detector.recognizeImage(croppedBitmap);
     final List<Recognition> expected = loadRecognitions("table_results.txt");
 

@@ -1,8 +1,11 @@
 /* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +20,7 @@ import android.graphics.RectF;
 import java.util.List;
 
 /** Generic interface for interacting with different recognition engines. */
-public interface Classifier {
+public interface Detector {
   List<Recognition> recognizeImage(Bitmap bitmap);
 
   void enableStatLogging(final boolean debug);
@@ -26,11 +29,11 @@ public interface Classifier {
 
   void close();
 
-  void setNumThreads(int num_threads);
+  void setNumThreads(int numThreads);
 
   void setUseNNAPI(boolean isChecked);
 
-  /** An immutable result returned by a Classifier describing what was recognized. */
+  /** An immutable result returned by a Detector describing what was recognized. */
   public class Recognition {
     /**
      * A unique identifier for what has been recognized. Specific to the class, not the instance of
@@ -48,7 +51,6 @@ public interface Classifier {
 
     /** Optional location within the source image for the location of the recognized object. */
     private RectF location;
-    private Integer color;
 
     public Recognition(
         final String id, final String title, final Float confidence, final RectF location) {
@@ -56,11 +58,6 @@ public interface Classifier {
       this.title = title;
       this.confidence = confidence;
       this.location = location;
-      this.color = null;
-    }
-
-    public void setColor(Integer color) {
-       this.color = color;
     }
 
     public String getId() {
@@ -104,10 +101,5 @@ public interface Classifier {
 
       return resultString.trim();
     }
-
-    public Integer getColor() {
-      return this.color;
-    }
-
   }
 }
