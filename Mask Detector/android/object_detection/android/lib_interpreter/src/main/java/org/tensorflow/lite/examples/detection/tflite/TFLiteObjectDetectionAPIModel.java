@@ -126,7 +126,7 @@ public class TFLiteObjectDetectionAPIModel implements Detector {
                 metadata.getAssociatedFile(labelFilename), Charset.defaultCharset()))) {
       String line;
       while ((line = br.readLine()) != null) {
-        Log.w(TAG, line);
+//        Log.w(TAG, line);
         d.labels.add(line);
       }
     }
@@ -198,17 +198,35 @@ public class TFLiteObjectDetectionAPIModel implements Detector {
     numDetections = new float[1];
 
     Object[] inputArray = {imgData};
+
     Map<Integer, Object> outputMap = new HashMap<>();
-    outputMap.put(0, outputLocations);
-    outputMap.put(1, outputClasses);
-    outputMap.put(2, outputScores);
-    outputMap.put(3, numDetections);
-    Trace.endSection();
+    float[][] output = new float[1][2];
+    outputMap.put(0, output);
+//    outputMap.put(0, outputLocations);
+//    outputMap.put(1, outputClasses);
+//    outputMap.put(2, outputScores);
+//    outputMap.put(3, numDetections);
+//    Trace.endSection();
 
     // Run the inference call.
     Trace.beginSection("run");
     tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
     Trace.endSection();
+
+    float mask = output[0][0];
+    float no_mask = output[0][1];
+    float confidence;
+    String id;
+    String label;
+    if (mask > no_mask) {
+      label = "mask";
+      confidence = mask;
+      id = "0";
+    } else {
+      label = "no mask";
+      confidence = no_mask;
+      id = "1";
+    }
 
     // Show the best detections.
     // after scaling them back to the input size.
@@ -223,19 +241,30 @@ public class TFLiteObjectDetectionAPIModel implements Detector {
             (int) numDetections[0]); // cast from float to integer, use min for safety
 
     final ArrayList<Recognition> recognitions = new ArrayList<>(numDetectionsOutput);
-    for (int i = 0; i < numDetectionsOutput; ++i) {
-      final RectF detection =
-          new RectF(
-              outputLocations[0][i][1] * inputSize,
-              outputLocations[0][i][0] * inputSize,
-              outputLocations[0][i][3] * inputSize,
-              outputLocations[0][i][2] * inputSize);
+    recognitions.add(
+            new Recognition(
+                    id,
+                    label,
+                    confidence,
+                    new RectF()
+            )
+    );
+//    for (int i = 0; i < numDetectionsOutput; ++i) {
+//      final RectF detection =
+//          new RectF(
+//              outputLocations[0][i][1] * inputSize,
+//              outputLocations[0][i][0] * inputSize,
+//              outputLocations[0][i][3] * inputSize,
+//              outputLocations[0][i][2] * inputSize);
+//
+//      recognitions.add(
+//          new Recognition(
+//              "" + i, labels.get((int) outputClasses[0][i]), outputScores[0][i], detection));
+//    }
+//    Trace.endSection(); // "recognizeImage"
+//
+//
 
-      recognitions.add(
-          new Recognition(
-              "" + i, labels.get((int) outputClasses[0][i]), outputScores[0][i], detection));
-    }
-    Trace.endSection(); // "recognizeImage"
     return recognitions;
   }
 
