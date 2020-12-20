@@ -23,9 +23,9 @@ Tools used:
 
 
 <p align="center">
-<img src="Dashboard/examples/scatter.PNG" width=300>
-<img src="Mask Detector/examples/mask.gif" width=300>
-<img src="Social Distancing/pedestrians.gif" width=300>
-<img src="Literature Clustering/images/przyklad2.PNG" width=300>
+<img src="Dashboard/examples/scatter.PNG" width=350 height=250>
+<img src="Mask Detector/examples/mask.gif" width=350 height=250>
+<img src="Social Distancing/pedestrians.gif" width=350 height=200>
+<img src="https://github.com/weronikazak/COVID-Projects/blob/master/Literature%20Clustering/images/przyklad2.png" width=350 height=200>
 
 </p>
